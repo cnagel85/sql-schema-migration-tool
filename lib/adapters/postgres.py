@@ -1,6 +1,8 @@
 
 import psycopg2
 import re
+import subprocess
+import platform
 
 
 class PGAdapterError(Exception):
@@ -112,6 +114,26 @@ class PGAdapter:
             db.rollback()
             raise
         print("[INFO] Finished Excuting SQL file")
+
+    def create_table_dump(self, filepath):
+        if platform.system() != "Linux":
+            print("Table dump only implemented for linux environments.")
+            return
+        try:
+            process = subprocess.Popen(
+                ['pg_dump',
+                 '--dbname=postgresql://{}:{}@{}:{}/{}'.format(self.user, self.password, self.host, self.port, self.database),
+                 '-n', "public",
+                 '-f', filepath,
+                 '-s',
+                 '-O',
+                 '-x']
+            )
+            process.communicate()[0]
+            if process.returncode != 0:
+                print('Command failed. Return code : {}'.format(process.returncode))
+        except Exception as e:
+            print(e)
 
 
 def new_adapter(sqlCfg):
